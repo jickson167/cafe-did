@@ -1,0 +1,324 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-color: #f5f1eb;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* 왼쪽: 광고 이미지 영역 (55%) */
+.ad-section {
+    width: 55%;
+    height: 100%;
+    background-color: #f5f1eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.ad-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+}
+
+/* 오른쪽: 주문 상태 영역 (45%) */
+.order-section {
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(135deg, #a89968 0%, #8b7355 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 상태 컨테이너 */
+.status-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.status-container:last-child {
+    border-bottom: none;
+}
+
+/* 상태 헤더 */
+.status-header {
+    margin-bottom: 20px;
+}
+
+.status-header h2 {
+    font-size: 64px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 준비중 헤더는 진한 흑갈색으로 변경 */
+.waiting-header h2 {
+    color: #56433B;
+}
+
+.ready-header h2 {
+    color: #ffffff;
+}
+
+/* 준비중 영역 배경색 전체 변경 */
+.order-section .status-container:first-child {
+    background-color: #FFF6E3;
+}
+
+/* 주문 카드 컨테이너 */
+.order-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-content: flex-start;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.order-cards::-webkit-scrollbar {
+    width: 8px;
+}
+
+.order-cards::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.order-cards::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.order-cards::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* 주문 번호 카드 */
+.order-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease-out;
+}
+
+.order-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.order-card-number {
+    font-size: 48px;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+}
+
+/* 준비중: 가로 4개, 세로 3개 보이도록 카드 크기 조정 */
+.waiting-list .order-card {
+    flex: 0 0 calc((100% - 45px) / 4);
+    padding: 18px;
+    min-height: 240px; /* 세로 크기 두배로 증가 */
+    background: #EAD9B9; /* 번호카드 색깔 */
+    border: 2px solid #91663A; /* 외각선 2px */
+}
+
+.waiting-list .order-card-number {
+    font-size: 112px; /* 숫자 폰트 두배 */
+    color: #56433B; /* 준비중 숫자색 */
+}
+
+/* 준비완료: 가로 2개, 세로 2개 보이도록 크게 조정 */
+.ready-list .order-card {
+    /* 가로 3개 배치 (gap 15px 사이즈 고려: 2 gaps per row => 30px) */
+    flex: 0 0 calc((100% - 30px) / 3);
+    padding: 20px;
+    /* 세로 사이즈를 260px로 설정 */
+    min-height: 260px;
+    border: 4px solid #ffffff; /* 외각선 4px 흰색 */
+    background: #EADDC6;
+}
+
+.ready-list .order-card-number {
+    font-size: 150px; /* 조정: 216px -> 150px */
+    color: #56433B; /* 준비중 글자 색과 동일하게 */
+    font-weight: 900;
+}
+
+/* 빈 상태 메시지 */
+.empty-message {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    width: 100%;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* 애니메이션 */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+.order-card.removing {
+    animation: fadeOut 0.3s ease-out;
+}
+
+/* Full HD (1920x1080) 기준 */
+@media (max-width: 1920px) {
+    .status-header h2 {
+        font-size: 32px;
+    }
+
+    .order-card-number {
+        font-size: 48px;
+    }
+
+    .order-card {
+        padding: 20px;
+    }
+}
+
+/* 반응형 - 소형 화면 */
+@media (max-width: 1280px) {
+    .ad-section {
+        width: 50%;
+    }
+
+    .order-section {
+        width: 50%;
+    }
+
+    .status-container {
+        padding: 20px;
+    }
+
+    .status-header h2 {
+        font-size: 24px;
+    }
+
+    .order-card {
+        padding: 15px;
+        min-width: 80px;
+    }
+
+    .order-card-number {
+        font-size: 36px;
+    }
+}
+
+/* 태블릿 모드 (세로 레이아웃) */
+html[data-mode="tablet"] .container {
+    flex-direction: column;
+}
+
+html[data-mode="tablet"] .ad-section {
+    display: none;
+}
+
+html[data-mode="tablet"] .order-section {
+    width: 100%;
+    height: 100%;
+}
+
+/* 반응형 - 초소형 화면 */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .ad-section {
+        width: 100%;
+        height: 50%;
+    }
+
+    .order-section {
+        width: 100%;
+        height: 50%;
+    }
+
+    .status-container {
+        padding: 15px;
+    }
+
+    .status-header h2 {
+        font-size: 20px;
+    }
+
+    .order-card {
+        padding: 12px;
+        min-width: 70px;
+    }
+
+    .order-card-number {
+        font-size: 28px;
+    }
+}
+
+/* 로딩 상태 */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 20px;
+}
+
+.error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #ff6b6b;
+    font-size: 16px;
+    text-align: center;
+    padding: 20px;
+}

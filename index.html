@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카페 주문 DID 화면</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 왼쪽: 광고 이미지 영역 -->
+        <div class="ad-section">
+            <img id="adImage" src="./ad-image.jpg" alt="광고 이미지" class="ad-image">
+        </div>
+
+        <!-- 오른쪽: 주문 상태 영역 -->
+        <div class="order-section">
+            <!-- 준비중 -->
+            <div class="status-container">
+                <div class="status-header waiting-header">
+                    <h2>준비중</h2>
+                </div>
+                <div id="waitingList" class="order-cards waiting-list">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+
+            <!-- 준비완료 -->
+            <div class="status-container">
+                <div class="status-header ready-header">
+                    <h2>준비완료</h2>
+                </div>
+                <div id="readyList" class="order-cards ready-list">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="dingAudio" src="./dingdong.mp3" preload="auto"></audio>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+</html>
