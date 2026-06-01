@@ -36,6 +36,7 @@ let hasInitialDisplayLoad = false;
 // 알림음 설정
 const DING_SOUND_URL = './dingdong.mp3';
 let dingAudio = null;
+let soundUnlocked = false;
 
 // DOM 요소
 const waitingList = document.getElementById('waitingList');
@@ -49,6 +50,7 @@ async function initialize() {
     console.log('[DID] 초기화 시작...');
 
     dingAudio = createDingAudio();
+    setupAudioUnlock();
 
     // 초기 데이터 로드
     await loadInitialData();
@@ -268,29 +270,53 @@ window.setAdImage = setAdImage;
  */
 window.refreshData = loadInitialData;
 
+function setupAudioUnlock() {
+    const unlock = () => {
+        if (soundUnlocked || !dingAudio)
+            return;
+
+        dingAudio.muted = false;
+        const playPromise = dingAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                soundUnlocked = true;
+                dingAudio.pause();
+                dingAudio.currentTime = 0;
+            }).catch((error) => {
+                console.warn('[DID] 오디오 잠금 해제 실패:', error);
+            });
+        }
+    };
+
+    ['click', 'touchstart', 'keydown'].forEach((eventName) => {
+        document.addEventListener(eventName, unlock, { once: true, passive: true });
+    });
+}
+
 function createDingAudio() {
     let audio = document.getElementById('dingAudio');
-    if (audio) {
-        audio.muted = false;
-        audio.volume = 1;
-        audio.preload = 'auto';
-        try {
-            audio.load();
-        } catch (error) {
-            console.warn('[DID] 기존 오디오 요소 로드 실패:', error);
-        }
-        return audio;
+    if (!audio) {
+        audio = new Audio(DING_SOUND_URL);
+        audio.id = 'dingAudio';
+        document.body.appendChild(audio);
     }
 
-    audio = new Audio(DING_SOUND_URL);
     audio.preload = 'auto';
-    audio.muted = false;
+    audio.muted = true;
     audio.volume = 1;
+    audio.loop = false;
     try {
         audio.load();
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // muted autoplay may still be blocked; this is just to register the audio element
+            });
+        }
     } catch (error) {
-        console.warn('[DID] 새 오디오 객체 로드 실패:', error);
+        console.warn('[DID] 오디오 초기화 실패:', error);
     }
+
     return audio;
 }
 
@@ -302,6 +328,7 @@ function playDingSound() {
         return;
 
     try {
+        dingAudio.muted = false;
         dingAudio.currentTime = 0;
         const playPromise = dingAudio.play();
         if (playPromise !== undefined) {
