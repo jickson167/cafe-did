@@ -47,15 +47,15 @@ const adImage = document.getElementById('adImage');
  */
 async function initialize() {
     console.log('[DID] 초기화 시작...');
-    
+
     dingAudio = createDingAudio();
 
     // 초기 데이터 로드
     await loadInitialData();
-    
+
     // Realtime 구독 설정
     subscribeToRealtimeUpdates();
-    
+
     console.log('[DID] 초기화 완료');
 }
 
@@ -93,7 +93,7 @@ async function loadInitialData() {
  */
 function subscribeToRealtimeUpdates() {
     console.log('[DID] Realtime 구독 설정...');
-    
+
     const subscription = supabaseClient
         .channel('did_status_changes')
         .on(
@@ -133,7 +133,7 @@ function subscribeToRealtimeUpdates() {
  */
 function updateDisplay(newData) {
     console.log('[DID] 화면 업데이트:', newData);
-    
+
     // 데이터 유효성 검사
     const maxWaiting = 6;
     const maxReady = 4;
@@ -179,13 +179,13 @@ function updateDisplay(newData) {
  */
 function renderOrderCards(container, orders, status) {
     if (!container) return;
-    
+
     // 기존 카드 제거
     const existingCards = container.querySelectorAll('.order-card');
-    
+
     // 새 카드 생성
     const fragment = document.createDocumentFragment();
-    
+
     if (orders.length === 0) {
         if (status === 'waiting') {
             const emptyMsg = document.createElement('div');
@@ -199,7 +199,7 @@ function renderOrderCards(container, orders, status) {
             fragment.appendChild(card);
         });
     }
-    
+
     // 부드러운 전환
     container.style.opacity = '0.7';
     setTimeout(() => {
@@ -217,18 +217,18 @@ function createOrderCard(orderNumber, status) {
     card.className = 'order-card';
     card.setAttribute('data-order-number', orderNumber);
     card.setAttribute('data-status', status);
-    
+
     const number = document.createElement('span');
     number.className = 'order-card-number';
     number.textContent = orderNumber;
-    
+
     card.appendChild(number);
-    
+
     // 클릭 이벤트 (선택사항)
     card.addEventListener('click', () => {
         console.log(`[DID] 주문번호 선택: ${orderNumber}`);
     });
-    
+
     return card;
 }
 
@@ -239,7 +239,7 @@ function showError(message) {
     const errorDiv = document.createElement('div');
     errorDiv.className = 'error';
     errorDiv.textContent = message;
-    
+
     const orderSection = document.querySelector('.order-section');
     if (orderSection) {
         orderSection.innerHTML = '';
@@ -269,13 +269,28 @@ window.setAdImage = setAdImage;
 window.refreshData = loadInitialData;
 
 function createDingAudio() {
-    const element = document.getElementById('dingAudio');
-    if (element) {
-        return element;
+    let audio = document.getElementById('dingAudio');
+    if (audio) {
+        audio.muted = false;
+        audio.volume = 1;
+        audio.preload = 'auto';
+        try {
+            audio.load();
+        } catch (error) {
+            console.warn('[DID] 기존 오디오 요소 로드 실패:', error);
+        }
+        return audio;
     }
 
-    const audio = new Audio(DING_SOUND_URL);
+    audio = new Audio(DING_SOUND_URL);
     audio.preload = 'auto';
+    audio.muted = false;
+    audio.volume = 1;
+    try {
+        audio.load();
+    } catch (error) {
+        console.warn('[DID] 새 오디오 객체 로드 실패:', error);
+    }
     return audio;
 }
 
@@ -283,11 +298,17 @@ function playDingSound() {
     if (!dingAudio)
         dingAudio = createDingAudio();
 
+    if (!dingAudio)
+        return;
+
     try {
         dingAudio.currentTime = 0;
-        dingAudio.play().catch((error) => {
-            console.warn('[DID] 띵동 소리 재생 실패:', error);
-        });
+        const playPromise = dingAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch((error) => {
+                console.warn('[DID] 띵동 소리 재생 실패:', error);
+            });
+        }
     } catch (error) {
         console.warn('[DID] 띵동 소리 재생 중 예외 발생:', error);
     }
