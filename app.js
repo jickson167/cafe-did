@@ -135,8 +135,12 @@ function updateDisplay(newData) {
     console.log('[DID] 화면 업데이트:', newData);
     
     // 데이터 유효성 검사
-    const waiting = Array.isArray(newData.waiting) ? newData.waiting : [];
-    const ready = Array.isArray(newData.ready) ? newData.ready : [];
+    const maxWaiting = 6;
+    const maxReady = 4;
+    const rawWaiting = Array.isArray(newData.waiting) ? newData.waiting : [];
+    const rawReady = Array.isArray(newData.ready) ? newData.ready : [];
+    const waiting = rawWaiting.length > maxWaiting ? rawWaiting.slice(-maxWaiting) : rawWaiting;
+    const ready = rawReady.length > maxReady ? rawReady.slice(-maxReady) : rawReady;
     // 변경사항이 없으면 렌더링 건너뜀 (깜빡임 방지)
     function arraysEqual(a, b) {
         if (a === b) return true;
