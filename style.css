@@ -254,18 +254,76 @@ body {
     }
 }
 
-/* 태블릿 모드 (세로 레이아웃) */
-html[data-mode="tablet"] .container {
+/* 태블릿/모바일 모드 (세로 비율 레이아웃) */
+html[data-device="tablet"] .container,
+html[data-device="mobile"] .container {
     flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
 }
 
-html[data-mode="tablet"] .ad-section {
+html[data-device="tablet"] .ad-section,
+html[data-device="mobile"] .ad-section {
     display: none;
 }
 
-html[data-mode="tablet"] .order-section {
+html[data-device="tablet"] .order-section,
+html[data-device="mobile"] .order-section {
     width: 100%;
-    height: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+html[data-device="tablet"] .order-section {
+    aspect-ratio: 3 / 4;
+}
+
+html[data-device="mobile"] .order-section {
+    aspect-ratio: 9 / 16;
+}
+
+html[data-device="tablet"] .status-container,
+html[data-device="mobile"] .status-container {
+    min-height: 0;
+}
+
+html[data-device="desktop"] .ad-section {
+    display: flex;
+    width: 55%;
+}
+
+html[data-device="desktop"] .order-section {
+    width: 45%;
+}
+
+/* 주문 카드 고정 크기 및 숫자 크기 조정 */
+.order-card {
+    max-width: 220px;
+    min-width: 140px;
+}
+
+.order-card-number {
+    font-size: clamp(3rem, 3.5vw, 4.5rem);
+    line-height: 1;
+}
+
+.waiting-list .order-card {
+    flex: 1 1 150px;
+    max-width: 190px;
+    min-width: 140px;
+    padding: 18px;
+    min-height: 220px;
+}
+
+.ready-list .order-card {
+    flex: 1 1 190px;
+    max-width: 240px;
+    min-width: 170px;
+    padding: 20px;
+    min-height: 240px;
 }
 
 /* 반응형 - 초소형 화면 */
@@ -281,7 +339,8 @@ html[data-mode="tablet"] .order-section {
 
     .order-section {
         width: 100%;
-        height: 50%;
+        height: auto;
+        max-width: 100%;
     }
 
     .status-container {
@@ -294,11 +353,12 @@ html[data-mode="tablet"] .order-section {
 
     .order-card {
         padding: 12px;
-        min-width: 70px;
+        min-width: 100px;
+        max-width: 220px;
     }
 
     .order-card-number {
-        font-size: 28px;
+        font-size: clamp(2.5rem, 5vw, 3.8rem);
     }
 }
 

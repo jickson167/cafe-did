@@ -6,18 +6,24 @@ const SUPABASE_ANON_KEY = 'sb_publishable__ZDgdPtpamWxdUAx7HfHkQ_MgJtwHQ1'; // �
 const { createClient } = window.supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 태블릿 모드 감지 (URL 파라미터: ?mode=tablet)
-function detectTabletMode() {
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode');
-    return mode === 'tablet';
+// 디바이스 유형 자동 감지
+function detectDeviceType() {
+    const ua = navigator.userAgent.toLowerCase();
+    const isTablet = /tablet|ipad|playbook|silk|android(?!.*mobile)/.test(ua);
+    const isMobile = /mobi|iphone|ipod|android|blackberry|iemobile|windows phone|opera mini/.test(ua);
+
+    if (isTablet) return 'tablet';
+    if (isMobile) return 'mobile';
+    return 'desktop';
 }
 
-const isTabletMode = detectTabletMode();
-if (isTabletMode) {
-    document.documentElement.setAttribute('data-mode', 'tablet');
-    console.log('[DID] 태블릿 모드 활성화');
+function applyDeviceMode() {
+    const deviceType = detectDeviceType();
+    document.documentElement.setAttribute('data-device', deviceType);
+    console.log(`[DID] 디바이스 자동 감지: ${deviceType}`);
 }
+
+applyDeviceMode();
 
 // 상태 관리
 let currentData = {
