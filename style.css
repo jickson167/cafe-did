@@ -288,16 +288,19 @@ html[data-device="mobile"] .order-section {
     flex-direction: column;
 }
 
-html[data-device="tablet"] .order-section {
-    aspect-ratio: 3 / 4;
-}
-
+html[data-device="tablet"] .order-section,
 html[data-device="mobile"] .order-section {
-    aspect-ratio: 9 / 16;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
 }
 
-html[data-device="tablet"] .status-container,
-html[data-device="mobile"] .status-container {
+/* 비율에 따른 동적 레이아웃 */
+html[data-aspect-layout="landscape-wide"] .status-container,
+html[data-aspect-layout="landscape"] .status-container,
+html[data-aspect-layout="portrait"] .status-container {
+    flex: 0 0 50% !important;
     min-height: 0;
 }
 
