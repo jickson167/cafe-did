@@ -288,20 +288,35 @@ html[data-device="mobile"] .order-section {
     flex-direction: column;
 }
 
-html[data-device="tablet"] .order-section,
-html[data-device="mobile"] .order-section {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
+/* 태블릿/모바일: 세로 레이아웃으로 변경 */
+html[data-device="tablet"] .container,
+html[data-device="mobile"] .container {
+    flex-direction: column !important;
 }
 
-/* 비율에 따른 동적 레이아웃 */
+html[data-device="tablet"] .ad-section,
+html[data-device="mobile"] .ad-section {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+html[data-device="tablet"] .order-section,
+html[data-device="mobile"] .order-section {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    flex: 1 1 auto !important;
+}
+
+/* 비율에 따른 동적 레이아웃 - 정확한 50:50 분할 */
 html[data-aspect-layout="landscape-wide"] .status-container,
 html[data-aspect-layout="landscape"] .status-container,
 html[data-aspect-layout="portrait"] .status-container {
     flex: 0 0 50% !important;
-    min-height: 0;
+    min-height: 0 !important;
 }
 
 html[data-device="desktop"] .ad-section {
