@@ -65,6 +65,8 @@ let hasInitialDisplayLoad = false;
 const DING_SOUND_URL = './dingdong.mp3';
 let dingAudio = null;
 let soundUnlocked = false;
+let speechSupported = 'speechSynthesis' in window;
+let speechVoices = [];
 
 // DOM 요소
 const waitingList = document.getElementById('waitingList');
@@ -79,6 +81,7 @@ async function initialize() {
 
     dingAudio = createDingAudio();
     setupAudioUnlock();
+    setupSpeechSynthesis();
 
     // 초기 데이터 로드
     await loadInitialData();
@@ -87,6 +90,67 @@ async function initialize() {
     subscribeToRealtimeUpdates();
 
     console.log('[DID] 초기화 완료');
+}
+
+function setupAudioUnlock() {
+    const unlock = () => {
+        soundUnlocked = true;
+        console.log('[DID] 오디오 잠금 해제됨');
+    };
+
+    document.addEventListener('click', unlock, { once: true, passive: true });
+    document.addEventListener('touchstart', unlock, { once: true, passive: true });
+    document.addEventListener('keydown', unlock, { once: true, passive: true });
+}
+
+function setupSpeechSynthesis() {
+    if (!speechSupported) {
+        console.warn('[DID] Speech Synthesis 지원되지 않음');
+        return;
+    }
+
+    const loadVoices = () => {
+        speechVoices = speechSynthesis.getVoices();
+        console.log('[DID] 음성 목록 로드:', speechVoices.map((voice) => `${voice.name} (${voice.lang})`));
+    };
+
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speakText(text) {
+    if (!speechSupported) {
+        console.warn('[DID] 음성 합성 미지원 상태입니다.');
+        return;
+    }
+
+    if (!soundUnlocked) {
+        console.warn('[DID] 음성 재생 잠금 상태: 먼저 화면을 터치해주세요.');
+        return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR';
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    if (speechVoices.length > 0) {
+        utterance.voice = speechVoices.find((voice) => voice.lang.startsWith('ko')) || speechVoices[0];
+    }
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+}
+
+function announceReadyOrders(newOrderNumbers) {
+    if (!Array.isArray(newOrderNumbers) || newOrderNumbers.length === 0)
+        return;
+
+    const numberPhrase = newOrderNumbers.map((orderNumber) => `${orderNumber}번`).join(', 주문번호 ');
+    const text = `주문번호 ${numberPhrase} 음료 준비되었습니다.`;
+    console.log('[DID] 음성 안내:', text);
+    speakText(text);
 }
 
 /**
@@ -188,7 +252,10 @@ function updateDisplay(newData) {
         return;
     }
 
-    const hasNewReady = hasInitialDisplayLoad && ready.some((orderNumber) => !currentData.ready.includes(orderNumber));
+    const newReadyOrders = hasInitialDisplayLoad
+        ? ready.filter((orderNumber) => !currentData.ready.includes(orderNumber))
+        : [];
+    const hasNewReady = newReadyOrders.length > 0;
     currentData = { waiting, ready };
 
     // 준비중 목록 업데이트
@@ -199,6 +266,7 @@ function updateDisplay(newData) {
 
     if (hasNewReady) {
         playDingSound();
+        announceReadyOrders(newReadyOrders);
     }
 
     hasInitialDisplayLoad = true;
