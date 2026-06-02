@@ -147,10 +147,93 @@ function announceReadyOrders(newOrderNumbers) {
     if (!Array.isArray(newOrderNumbers) || newOrderNumbers.length === 0)
         return;
 
-    const numberPhrase = newOrderNumbers.map((orderNumber) => `${orderNumber}번`).join(', 주문번호 ');
-    const text = `주문번호 ${numberPhrase} 음료 준비되었습니다.`;
-    console.log('[DID] 음성 안내:', text);
-    speakText(text);
+    // 단 하나의 주문비만 음성안내
+    if (newOrderNumbers.length > 0) {
+        playOrderNumberVoice(newOrderNumbers[0]);
+    }
+}
+
+function playOrderNumberVoice(orderNumber) {
+    if (!soundUnlocked || !orderNumber) {
+        console.warn('[DID] 음성 재생 잠금 상태 또는 주문번호 없음');
+        return;
+    }
+
+    if (orderNumber.length !== 3 || !/^[1-9]\d{2}$/.test(orderNumber)) {
+        console.warn('[DID] 유효하지 않은 주문번호 형식:', orderNumber);
+        return;
+    }
+
+    const audioSequence = [];
+    const hundreds = parseInt(orderNumber[0], 10);
+    const tens = parseInt(orderNumber[1], 10);
+    const ones = parseInt(orderNumber[2], 10);
+
+    // 백의 자리
+    if (hundreds > 0) {
+        audioSequence.push(`./voice/${hundreds * 100}.mp3`);
+    }
+
+    // 십의 자리
+    if (tens > 0) {
+        audioSequence.push(`./voice/${tens * 10}.mp3`);
+    }
+
+    // 일의 자리
+    if (ones > 0) {
+        audioSequence.push(`./voice/${ones}.mp3`);
+    }
+
+    // 마지막 접 - '연동되었습니다' 등
+    audioSequence.push('./voice/LAST.mp3');
+
+    console.log('[DID] 주문번호 ' + orderNumber + ' 음성 스싱:', audioSequence);
+    playAudioSequence(audioSequence);
+}
+
+let currentAudioIndex = 0;
+let audioPlaylist = [];
+
+function playAudioSequence(fileList) {
+    if (!Array.isArray(fileList) || fileList.length === 0)
+        return;
+
+    audioPlaylist = fileList;
+    currentAudioIndex = 0;
+    playNextAudio();
+}
+
+function playNextAudio() {
+    if (currentAudioIndex >= audioPlaylist.length) {
+        console.log('[DID] 음성 재생 스싱 종료');
+        return;
+    }
+
+    const audioPath = audioPlaylist[currentAudioIndex];
+    const audio = new Audio(audioPath);
+    audio.volume = 1;
+
+    audio.onended = () => {
+        currentAudioIndex++;
+        // 0.3초 대기 후 다음 재생
+        setTimeout(playNextAudio, 300);
+    };
+
+    audio.onerror = (error) => {
+        console.error('[DID] 음성 재생 실패:', audioPath, error);
+        currentAudioIndex++;
+        setTimeout(playNextAudio, 300);
+    };
+
+    try {
+        audio.play().catch((error) => {
+            console.warn('[DID] 음성 play() 실패:', error);
+        });
+    } catch (error) {
+        console.error('[DID] 음성 실패:', error);
+        currentAudioIndex++;
+        setTimeout(playNextAudio, 300);
+    }
 }
 
 /**
