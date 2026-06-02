@@ -215,14 +215,14 @@ function playNextAudio() {
 
     audio.onended = () => {
         currentAudioIndex++;
-        // 0.3초 대기 후 다음 재생
-        setTimeout(playNextAudio, 300);
+        // 50ms 간격으로 다음 재생 (자연스러운 연속 음성)
+        setTimeout(playNextAudio, 50);
     };
 
     audio.onerror = (error) => {
         console.error('[DID] 음성 재생 실패:', audioPath, error);
         currentAudioIndex++;
-        setTimeout(playNextAudio, 300);
+        setTimeout(playNextAudio, 50);
     };
 
     try {
@@ -232,7 +232,7 @@ function playNextAudio() {
     } catch (error) {
         console.error('[DID] 음성 실패:', error);
         currentAudioIndex++;
-        setTimeout(playNextAudio, 300);
+        setTimeout(playNextAudio, 50);
     }
 }
 
