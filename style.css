@@ -260,6 +260,11 @@ body {
         min-width: 80px;
     }
 
+    /* 태블릿 전용 헤더 폰트 확대 */
+    html[data-device="tablet"] .status-header h2 {
+        font-size: 54px !important;
+    }
+
     .order-card-number {
         font-size: clamp(2.5rem, 5vw, 4.5rem);
     }
