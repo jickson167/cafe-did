@@ -1,0 +1,16 @@
+{
+  "name": "카페 주문 DID 화면",
+  "short_name": "카페 DID",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#8b7355",
+  "theme_color": "#8b7355",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./ad-image.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
