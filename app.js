@@ -348,8 +348,9 @@ function updateDisplay(newData) {
     renderOrderCards(readyList, ready, 'ready');
 
     if (hasNewReady) {
-        playDingSound();
-        announceReadyOrders(newReadyOrders);
+        playDingSound(() => {
+            announceReadyOrders(newReadyOrders);
+        });
     }
 
     hasInitialDisplayLoad = true;
@@ -499,24 +500,37 @@ function createDingAudio() {
     return audio;
 }
 
-function playDingSound() {
+function playDingSound(onComplete) {
     if (!dingAudio)
         dingAudio = createDingAudio();
 
-    if (!dingAudio)
+    if (!dingAudio) {
+        if (typeof onComplete === 'function')
+            onComplete();
         return;
+    }
 
     try {
         dingAudio.muted = false;
         dingAudio.currentTime = 0;
+        dingAudio.onended = () => {
+            console.log('[DID] 띵동 재생 완료');
+            if (typeof onComplete === 'function')
+                onComplete();
+        };
+
         const playPromise = dingAudio.play();
         if (playPromise !== undefined) {
             playPromise.catch((error) => {
                 console.warn('[DID] 띵동 소리 재생 실패:', error);
+                if (typeof onComplete === 'function')
+                    onComplete();
             });
         }
     } catch (error) {
         console.warn('[DID] 띵동 소리 재생 중 예외 발생:', error);
+        if (typeof onComplete === 'function')
+            onComplete();
     }
 }
 
