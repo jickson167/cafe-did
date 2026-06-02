@@ -21,7 +21,7 @@ function applyDeviceMode() {
     const deviceType = detectDeviceType();
     document.documentElement.setAttribute('data-device', deviceType);
     console.log(`[DID] 디바이스 자동 감지: ${deviceType}`);
-    
+
     // 화면 비율 감지
     updateAspectRatio();
     window.addEventListener('resize', updateAspectRatio);
@@ -31,9 +31,9 @@ function updateAspectRatio() {
     const width = window.innerWidth;
     const height = window.innerHeight;
     const aspectRatio = width / height;
-    
+
     console.log(`[DID] 화면 비율: ${width}x${height} = ${aspectRatio.toFixed(2)}`);
-    
+
     // 비율에 따라 레이아웃 분류
     let layoutType;
     if (aspectRatio >= 1.5) {
@@ -46,7 +46,7 @@ function updateAspectRatio() {
         // 1보다 작음 (세로 화면)
         layoutType = 'portrait';
     }
-    
+
     document.documentElement.setAttribute('data-aspect-layout', layoutType);
     console.log(`[DID] 레이아웃 타입: ${layoutType}`);
 }

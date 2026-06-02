@@ -70,7 +70,7 @@ body {
 }
 
 .status-header h2 {
-    font-size: 48px;
+    font-size: 62px;
     color: white;
     font-weight: bold;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
@@ -252,7 +252,7 @@ body {
     }
 
     .status-header h2 {
-        font-size: 24px;
+        font-size: 31px;
     }
 
     .order-card {
@@ -368,7 +368,7 @@ html[data-device="desktop"] .order-section {
     }
 
     .status-header h2 {
-        font-size: 20px;
+        font-size: 26px;
     }
 
     .order-card {
