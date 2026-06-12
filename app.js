@@ -82,29 +82,51 @@ async function initialize() {
     dingAudio = createDingAudio();
     setupAudioUnlock();
     setupSpeechSynthesis();
+
+    // Supabase 연결을 우선하고, 음성 preload는 데이터 로드 이후에 실행
+    await loadInitialData();
+    subscribeToRealtimeUpdates();
     preloadVoiceFiles();
     preloadVoiceBuffers();
-
-    // 초기 데이터 로드
-    await loadInitialData();
-
-    // Realtime 구독 설정
-    subscribeToRealtimeUpdates();
 
     console.log('[DID] 초기화 완료');
 }
 
 function setupAudioUnlock() {
     const unlock = () => {
+        if (soundUnlocked)
+            return;
+
+        if (dingAudio) {
+            dingAudio.muted = false;
+            const playPromise = dingAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    soundUnlocked = true;
+                    dingAudio.pause();
+                    dingAudio.currentTime = 0;
+                    resumeVoiceAudioContext();
+                }).catch((error) => {
+                    console.warn('[DID] 오디오 잠금 해제 실패:', error);
+                    soundUnlocked = true;
+                    resumeVoiceAudioContext();
+                });
+                return;
+            }
+        }
+
         soundUnlocked = true;
-        if (voiceAudioContext && voiceAudioContext.state === 'suspended')
-            voiceAudioContext.resume();
-        console.log('[DID] 오디오 잠금 해제됨');
+        resumeVoiceAudioContext();
     };
 
-    document.addEventListener('click', unlock, { once: true, passive: true });
-    document.addEventListener('touchstart', unlock, { once: true, passive: true });
-    document.addEventListener('keydown', unlock, { once: true, passive: true });
+    ['click', 'touchstart', 'keydown'].forEach((eventName) => {
+        document.addEventListener(eventName, unlock, { once: true, passive: true });
+    });
+}
+
+function resumeVoiceAudioContext() {
+    if (voiceAudioContext && voiceAudioContext.state === 'suspended')
+        voiceAudioContext.resume();
 }
 
 function setupSpeechSynthesis() {
@@ -324,7 +346,8 @@ async function loadInitialData() {
 
         if (error) {
             console.error('[DID] 데이터 조회 실패:', error);
-            showError('Supabase 데이터 로드 실패');
+            if (!hasInitialDisplayLoad)
+                showError(formatSupabaseError(error));
             return;
         }
 
@@ -336,8 +359,18 @@ async function loadInitialData() {
         }
     } catch (err) {
         console.error('[DID] 예외 발생:', err);
-        showError('데이터 로드 중 오류 발생');
+        if (!hasInitialDisplayLoad)
+            showError(formatSupabaseError(err));
     }
+}
+
+function formatSupabaseError(error) {
+    const message = error?.message || String(error);
+    if (/failed to fetch|network|load failed|nxdomain/i.test(message))
+        return 'Supabase 서버에 연결할 수 없습니다. 프로젝트 URL과 네트워크를 확인해주세요.';
+    if (/invalid jwt|jwt/i.test(message))
+        return 'Supabase API 키가 올바르지 않습니다. 대시보드에서 키를 확인해주세요.';
+    return `Supabase 데이터 로드 실패 (${message})`;
 }
 
 /**
@@ -524,29 +557,6 @@ window.setAdImage = setAdImage;
  * 전체 새로고침 (테스트용)
  */
 window.refreshData = loadInitialData;
-
-function setupAudioUnlock() {
-    const unlock = () => {
-        if (soundUnlocked || !dingAudio)
-            return;
-
-        dingAudio.muted = false;
-        const playPromise = dingAudio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                soundUnlocked = true;
-                dingAudio.pause();
-                dingAudio.currentTime = 0;
-            }).catch((error) => {
-                console.warn('[DID] 오디오 잠금 해제 실패:', error);
-            });
-        }
-    };
-
-    ['click', 'touchstart', 'keydown'].forEach((eventName) => {
-        document.addEventListener(eventName, unlock, { once: true, passive: true });
-    });
-}
 
 function createDingAudio() {
     let audio = document.getElementById('dingAudio');
