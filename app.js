@@ -82,6 +82,8 @@ async function initialize() {
     dingAudio = createDingAudio();
     setupAudioUnlock();
     setupSpeechSynthesis();
+    preloadVoiceFiles();
+    preloadVoiceBuffers();
 
     // 초기 데이터 로드
     await loadInitialData();
@@ -95,6 +97,8 @@ async function initialize() {
 function setupAudioUnlock() {
     const unlock = () => {
         soundUnlocked = true;
+        if (voiceAudioContext && voiceAudioContext.state === 'suspended')
+            voiceAudioContext.resume();
         console.log('[DID] 오디오 잠금 해제됨');
     };
 
@@ -191,49 +195,120 @@ function playOrderNumberVoice(orderNumber) {
     playAudioSequence(audioSequence);
 }
 
-let currentAudioIndex = 0;
-let audioPlaylist = [];
+const voiceAudioCache = new Map();
+let voiceAudioContext = null;
+let voiceBufferCache = new Map();
+
+function buildVoiceFilePaths() {
+    const paths = ['./voice/LAST.mp3'];
+    for (let i = 1; i <= 9; i++) {
+        paths.push(`./voice/${i}.mp3`);
+        paths.push(`./voice/${i * 10}.mp3`);
+        paths.push(`./voice/${i * 100}.mp3`);
+    }
+    return paths;
+}
+
+function getVoiceAudio(path) {
+    if (!voiceAudioCache.has(path)) {
+        const audio = new Audio(path);
+        audio.preload = 'auto';
+        voiceAudioCache.set(path, audio);
+    }
+    return voiceAudioCache.get(path);
+}
+
+function preloadVoiceFiles() {
+    buildVoiceFilePaths().forEach((path) => getVoiceAudio(path));
+}
+
+async function preloadVoiceBuffers() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass)
+        return;
+
+    voiceAudioContext = new AudioContextClass();
+    await Promise.all(buildVoiceFilePaths().map(async (path) => {
+        try {
+            const response = await fetch(path);
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = await voiceAudioContext.decodeAudioData(arrayBuffer);
+            voiceBufferCache.set(path, buffer);
+        } catch (error) {
+            console.warn('[DID] 음성 버퍼 preload 실패:', path, error);
+        }
+    }));
+}
 
 function playAudioSequence(fileList) {
     if (!Array.isArray(fileList) || fileList.length === 0)
         return;
 
-    audioPlaylist = fileList;
-    currentAudioIndex = 0;
-    playNextAudio();
-}
-
-function playNextAudio() {
-    if (currentAudioIndex >= audioPlaylist.length) {
-        console.log('[DID] 음성 재생 스싱 종료');
+    if (voiceAudioContext && voiceBufferCache.size > 0) {
+        playAudioSequenceWithWebAudio(fileList);
         return;
     }
 
-    const audioPath = audioPlaylist[currentAudioIndex];
-    const audio = new Audio(audioPath);
-    audio.volume = 1;
+    playAudioSequenceWithHtmlAudio(fileList);
+}
 
-    audio.onended = () => {
-        currentAudioIndex++;
-        // 50ms 간격으로 다음 재생 (자연스러운 연속 음성)
-        setTimeout(playNextAudio, 50);
-    };
+function playAudioSequenceWithWebAudio(fileList) {
+    if (voiceAudioContext.state === 'suspended')
+        voiceAudioContext.resume();
 
-    audio.onerror = (error) => {
-        console.error('[DID] 음성 재생 실패:', audioPath, error);
-        currentAudioIndex++;
-        setTimeout(playNextAudio, 50);
-    };
+    let startTime = voiceAudioContext.currentTime + 0.01;
+    for (const path of fileList) {
+        const buffer = voiceBufferCache.get(path);
+        if (!buffer)
+            continue;
 
-    try {
+        const source = voiceAudioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(voiceAudioContext.destination);
+        source.start(startTime);
+        startTime += buffer.duration;
+    }
+}
+
+function playAudioSequenceWithHtmlAudio(fileList) {
+    let index = 0;
+
+    function playNext() {
+        if (index >= fileList.length) {
+            console.log('[DID] 음성 재생 시퀀스 종료');
+            return;
+        }
+
+        const audioPath = fileList[index];
+        const audio = getVoiceAudio(audioPath);
+        audio.volume = 1;
+
+        const onDone = () => {
+            audio.removeEventListener('ended', onDone);
+            audio.removeEventListener('error', onError);
+            index++;
+            playNext();
+        };
+
+        const onError = (error) => {
+            console.error('[DID] 음성 재생 실패:', audioPath, error);
+            audio.removeEventListener('ended', onDone);
+            audio.removeEventListener('error', onError);
+            index++;
+            playNext();
+        };
+
+        audio.addEventListener('ended', onDone);
+        audio.addEventListener('error', onError);
+        audio.currentTime = 0;
+
         audio.play().catch((error) => {
             console.warn('[DID] 음성 play() 실패:', error);
+            onError(error);
         });
-    } catch (error) {
-        console.error('[DID] 음성 실패:', error);
-        currentAudioIndex++;
-        setTimeout(playNextAudio, 50);
     }
+
+    playNext();
 }
 
 /**
