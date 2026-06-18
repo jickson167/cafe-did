@@ -2,6 +2,10 @@
     background-color: #f5f1eb;
 }
 
+.admin-page [hidden] {
+    display: none !important;
+}
+
 .pin-screen {
     position: fixed;
     inset: 0;
@@ -95,11 +99,15 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: 30;
     padding: 20px;
+}
+
+.action-overlay.is-open {
+    display: flex;
 }
 
 .action-popup {

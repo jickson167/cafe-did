@@ -6,6 +6,8 @@ const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MAX_WAITING = 6;
 const MAX_READY = 4;
+const DEFAULT_ADMIN_PIN = '0000';
+const SKIP_PIN = true;
 
 const pinScreen = document.getElementById('pinScreen');
 const adminApp = document.getElementById('adminApp');
@@ -28,9 +30,32 @@ let verifiedPin = '';
 let storeContext = null;
 let selectedOrder = null;
 let commandInFlight = false;
+let pollingStarted = false;
 
 function getSlugFromUrl() {
     return new URLSearchParams(window.location.search).get('slug');
+}
+
+function shouldSkipPin() {
+    if (SKIP_PIN)
+        return true;
+
+    const params = new URLSearchParams(window.location.search);
+    return params.get('skipPin') === '1' || params.get('nopin') === '1';
+}
+
+function formatMenuText(menu) {
+    if (!menu)
+        return '';
+
+    return menu
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .trim();
 }
 
 async function resolveStoreContext() {
@@ -57,7 +82,8 @@ async function verifyPin(pin) {
             p_pin: pin,
             p_legacy_id: storeContext.legacyId
         });
-        if (error) throw error;
+        if (error)
+            throw error;
         return !!data;
     }
 
@@ -65,7 +91,8 @@ async function verifyPin(pin) {
         p_slug: storeContext.slug,
         p_pin: pin
     });
-    if (error) throw error;
+    if (error)
+        throw error;
     return !!data;
 }
 
@@ -81,7 +108,8 @@ async function enqueueCommand(action, orderNumber) {
             p_order_number: orderNumber,
             p_legacy_id: storeContext.legacyId
         });
-        if (error) throw error;
+        if (error)
+            throw error;
         return;
     }
 
@@ -91,7 +119,8 @@ async function enqueueCommand(action, orderNumber) {
         p_action: action,
         p_order_number: orderNumber
     });
-    if (error) throw error;
+    if (error)
+        throw error;
 }
 
 async function loadInitialData() {
@@ -106,7 +135,8 @@ async function loadInitialData() {
             .eq('id', 1)
             .single();
 
-        if (error) throw error;
+        if (error)
+            throw error;
         updateDisplay(data?.data || { waiting: [], ready: [] });
         return;
     }
@@ -114,7 +144,8 @@ async function loadInitialData() {
     const { data, error } = await supabaseClient.rpc('get_did_status_by_slug', {
         p_slug: storeContext.slug
     });
-    if (error) throw error;
+    if (error)
+        throw error;
     updateDisplay(data || { waiting: [], ready: [] });
 }
 
@@ -179,7 +210,8 @@ function hasOrderMoved(selected) {
 }
 
 function renderOrderCards(container, orders, status) {
-    if (!container) return;
+    if (!container)
+        return;
 
     const fragment = document.createDocumentFragment();
 
@@ -211,10 +243,11 @@ function createOrderCard(order, status) {
     number.textContent = order.number;
     card.appendChild(number);
 
-    if (order.menu) {
+    const menuText = formatMenuText(order.menu);
+    if (menuText) {
         const menu = document.createElement('div');
         menu.className = 'order-card-menu';
-        menu.textContent = order.menu;
+        menu.textContent = menuText;
         card.appendChild(menu);
     }
 
@@ -223,11 +256,11 @@ function createOrderCard(order, status) {
 }
 
 function openActionPopup(order, status) {
-    selectedOrder = { number: order.number, menu: order.menu, status };
+    selectedOrder = { number: order.number, menu: formatMenuText(order.menu), status };
     commandInFlight = false;
 
     actionOrderNumber.textContent = order.number;
-    actionOrderMenu.textContent = order.menu || '';
+    actionOrderMenu.textContent = formatMenuText(order.menu);
     actionStatus.hidden = true;
     actionStatus.textContent = '';
 
@@ -245,10 +278,12 @@ function openActionPopup(order, status) {
 
     setActionButtonsDisabled(false);
     actionOverlay.hidden = false;
+    actionOverlay.classList.add('is-open');
 }
 
 function closeActionPopup() {
     actionOverlay.hidden = true;
+    actionOverlay.classList.remove('is-open');
     selectedOrder = null;
     commandInFlight = false;
     setActionButtonsDisabled(false);
@@ -277,7 +312,22 @@ async function runCommand(action) {
         console.error('[ADMIN] command failed:', error);
         commandInFlight = false;
         setActionButtonsDisabled(false);
-        actionStatus.textContent = '명령 전송 실패. PIN 또는 네트워크를 확인하세요.';
+        actionStatus.textContent = '명령 전송 실패. KDS 실행 또는 Supabase 설정을 확인하세요.';
+    }
+}
+
+async function enterAdminApp(pin) {
+    verifiedPin = pin;
+    pinScreen.hidden = true;
+    adminApp.hidden = false;
+    closeActionPopup();
+
+    await loadInitialData();
+    subscribeToRealtimeUpdates();
+
+    if (!pollingStarted) {
+        pollingStarted = true;
+        setInterval(loadInitialData, 5000);
     }
 }
 
@@ -300,15 +350,30 @@ async function handlePinSubmit() {
             return;
         }
 
-        verifiedPin = pin;
-        pinScreen.hidden = true;
-        adminApp.hidden = false;
-        await loadInitialData();
-        subscribeToRealtimeUpdates();
-        setInterval(loadInitialData, 5000);
+        await enterAdminApp(pin);
     } catch (error) {
         console.error('[ADMIN] pin verify failed:', error);
         pinError.textContent = error.message || '입장에 실패했습니다.';
+        pinError.hidden = false;
+    }
+}
+
+async function initializeAdmin() {
+    closeActionPopup();
+
+    if (!shouldSkipPin()) {
+        console.log('[ADMIN] PIN 화면 표시');
+        return;
+    }
+
+    try {
+        storeContext = await resolveStoreContext();
+        verifiedPin = DEFAULT_ADMIN_PIN;
+        await enterAdminApp(DEFAULT_ADMIN_PIN);
+        console.log('[ADMIN] PIN 없이 바로 입장');
+    } catch (error) {
+        console.error('[ADMIN] auto enter failed:', error);
+        pinError.textContent = error.message || '화면을 불러오지 못했습니다.';
         pinError.hidden = false;
     }
 }
@@ -326,5 +391,7 @@ actionOverlay.addEventListener('click', (event) => {
         closeActionPopup();
     }
 });
+
+document.addEventListener('DOMContentLoaded', initializeAdmin);
 
 console.log('[ADMIN] 관리 페이지 준비 완료');
