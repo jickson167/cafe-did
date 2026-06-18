@@ -6,53 +6,6 @@ const SUPABASE_ANON_KEY = 'sb_publishable__ZDgdPtpamWxdUAx7HfHkQ_MgJtwHQ1'; // �
 const { createClient } = window.supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 디바이스 유형 자동 감지
-function detectDeviceType() {
-    const ua = navigator.userAgent.toLowerCase();
-    const isTablet = /tablet|ipad|playbook|silk|android(?!.*mobile)/.test(ua);
-    const isMobile = /mobi|iphone|ipod|android|blackberry|iemobile|windows phone|opera mini/.test(ua);
-
-    if (isTablet) return 'tablet';
-    if (isMobile) return 'mobile';
-    return 'desktop';
-}
-
-function applyDeviceMode() {
-    const deviceType = detectDeviceType();
-    document.documentElement.setAttribute('data-device', deviceType);
-    console.log(`[DID] 디바이스 자동 감지: ${deviceType}`);
-
-    // 화면 비율 감지
-    updateAspectRatio();
-    window.addEventListener('resize', updateAspectRatio);
-}
-
-function updateAspectRatio() {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const aspectRatio = width / height;
-
-    console.log(`[DID] 화면 비율: ${width}x${height} = ${aspectRatio.toFixed(2)}`);
-
-    // 비율에 따라 레이아웃 분류
-    let layoutType;
-    if (aspectRatio >= 1.5) {
-        // 16:9 이상 (가로 긴 화면)
-        layoutType = 'landscape-wide';
-    } else if (aspectRatio >= 1.33) {
-        // 4:3 ~ 16:9 (태블릿)
-        layoutType = 'landscape';
-    } else {
-        // 1보다 작음 (세로 화면)
-        layoutType = 'portrait';
-    }
-
-    document.documentElement.setAttribute('data-aspect-layout', layoutType);
-    console.log(`[DID] 레이아웃 타입: ${layoutType}`);
-}
-
-applyDeviceMode();
-
 // 상태 관리
 let currentData = {
     waiting: [],

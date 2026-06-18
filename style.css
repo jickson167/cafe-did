@@ -277,50 +277,74 @@ body {
     }
 }
 
-/* 태블릿/모바일 모드 (세로 비율 레이아웃) */
-html[data-device="tablet"] .container,
-html[data-device="mobile"] .container {
-    flex-direction: column;
+/* 핸드폰: 광고 이미지 숨김, 주문 영역만 전체 화면 */
+html[data-device="mobile"] body,
+html.is-mobile-phone body {
+    overflow: auto;
+}
+
+html[data-device="mobile"] .container,
+html.is-mobile-phone .container {
+    flex-direction: column !important;
+    align-items: stretch;
+    justify-content: flex-start;
+    height: 100%;
+}
+
+html[data-device="mobile"] .ad-section,
+html.is-mobile-phone .ad-section {
+    display: none !important;
+}
+
+html[data-device="mobile"] .order-section,
+html.is-mobile-phone .order-section {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: auto !important;
+    flex: 1 1 auto !important;
+    margin: 0 auto;
+}
+
+/* 태블릿: 세로 스택 (이미지 숨김) */
+html[data-device="tablet"] .container {
+    flex-direction: column !important;
     align-items: stretch;
     justify-content: flex-start;
 }
 
-html[data-device="tablet"] .ad-section,
-html[data-device="mobile"] .ad-section {
-    display: none;
+html[data-device="tablet"] .ad-section {
+    display: none !important;
 }
 
-html[data-device="tablet"] .order-section,
-html[data-device="mobile"] .order-section {
-    width: 100%;
-    max-width: 100%;
-    min-height: 100vh;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-}
-
-/* 태블릿/모바일: 세로 레이아웃으로 변경 */
-html[data-device="tablet"] .container,
-html[data-device="mobile"] .container {
-    flex-direction: column !important;
-}
-
-html[data-device="tablet"] .ad-section,
-html[data-device="mobile"] .ad-section {
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    flex: 0 0 auto !important;
-}
-
-html[data-device="tablet"] .order-section,
-html[data-device="mobile"] .order-section {
+html[data-device="tablet"] .order-section {
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
-    height: auto !important;
+    max-width: 100% !important;
+    min-height: 100vh;
+    min-height: 100dvh;
     flex: 1 1 auto !important;
+    margin: 0 auto;
+}
+
+/* JS 없을 때 핸드폰 가로(16:9) 대비 CSS-only fallback */
+@media (pointer: coarse) and (max-height: 520px) {
+    .ad-section {
+        display: none !important;
+    }
+
+    .container {
+        flex-direction: column !important;
+    }
+
+    .order-section {
+        width: 100% !important;
+        min-height: 100dvh;
+    }
 }
 
 /* 비율에 따른 동적 레이아웃 - 정확한 50:50 분할 */
@@ -365,14 +389,14 @@ html[data-device="desktop"] .order-section {
     }
 
     .ad-section {
-        width: 100%;
-        height: 50%;
+        display: none;
     }
 
     .order-section {
         width: 100%;
         height: auto;
         max-width: 100%;
+        min-height: 100dvh;
     }
 
     .status-container {
