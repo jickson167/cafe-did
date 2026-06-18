@@ -419,32 +419,19 @@ function subscribeToRealtimeUpdates() {
 function updateDisplay(newData) {
     console.log('[DID] 화면 업데이트:', newData);
 
-    // 데이터 유효성 검사
     const maxWaiting = 6;
     const maxReady = 4;
-    const rawWaiting = Array.isArray(newData.waiting) ? newData.waiting : [];
-    const rawReady = Array.isArray(newData.ready) ? newData.ready : [];
-    const waiting = rawWaiting.length > maxWaiting ? rawWaiting.slice(-maxWaiting) : rawWaiting;
-    const ready = rawReady.length > maxReady ? rawReady.slice(-maxReady) : rawReady;
-    // 변경사항이 없으면 렌더링 건너뜀 (깜빡임 방지)
-    function arraysEqual(a, b) {
-        if (a === b) return true;
-        if (!Array.isArray(a) || !Array.isArray(b)) return false;
-        if (a.length !== b.length) return false;
-        for (let i = 0; i < a.length; i++) {
-            if (a[i] !== b[i]) return false;
-        }
-        return true;
-    }
+    const waiting = DidOrderData.trimOrders(newData.waiting, maxWaiting);
+    const ready = DidOrderData.trimOrders(newData.ready, maxReady);
 
-    if (hasInitialDisplayLoad && arraysEqual(waiting, currentData.waiting) && arraysEqual(ready, currentData.ready)) {
-        // 변경 없음
-        //console.log('[DID] 변경 없음 — 렌더링 생략');
+    if (hasInitialDisplayLoad
+        && DidOrderData.ordersEqual(waiting, currentData.waiting)
+        && DidOrderData.ordersEqual(ready, currentData.ready)) {
         return;
     }
 
     const newReadyOrders = hasInitialDisplayLoad
-        ? ready.filter((orderNumber) => !currentData.ready.includes(orderNumber))
+        ? ready.filter((order) => !currentData.ready.some((item) => item.number === order.number))
         : [];
     const hasNewReady = newReadyOrders.length > 0;
     currentData = { waiting, ready };
@@ -457,7 +444,7 @@ function updateDisplay(newData) {
 
     if (hasNewReady) {
         playDingSound(() => {
-            announceReadyOrders(newReadyOrders);
+            announceReadyOrders(DidOrderData.getOrderNumbers(newReadyOrders));
         });
     }
 
@@ -484,8 +471,8 @@ function renderOrderCards(container, orders, status) {
             fragment.appendChild(emptyMsg);
         }
     } else {
-        orders.forEach((orderNumber) => {
-            const card = createOrderCard(orderNumber, status);
+        orders.forEach((order) => {
+            const card = createOrderCard(order.number, status);
             fragment.appendChild(card);
         });
     }
@@ -503,20 +490,24 @@ function renderOrderCards(container, orders, status) {
  * 주문 카드 생성
  */
 function createOrderCard(orderNumber, status) {
+    const displayNumber = typeof orderNumber === 'string'
+        ? orderNumber
+        : DidOrderData.normalizeOrder(orderNumber).number;
+
     const card = document.createElement('div');
     card.className = 'order-card';
-    card.setAttribute('data-order-number', orderNumber);
+    card.setAttribute('data-order-number', displayNumber);
     card.setAttribute('data-status', status);
 
     const number = document.createElement('span');
     number.className = 'order-card-number';
-    number.textContent = orderNumber;
+    number.textContent = displayNumber;
 
     card.appendChild(number);
 
     // 클릭 이벤트 (선택사항)
     card.addEventListener('click', () => {
-        console.log(`[DID] 주문번호 선택: ${orderNumber}`);
+        console.log(`[DID] 주문번호 선택: ${displayNumber}`);
     });
 
     return card;
