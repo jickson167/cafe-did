@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#8b7355">
+    <title>카페 DID 관리</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body class="admin-page">
+    <div id="pinScreen" class="pin-screen">
+        <div class="pin-panel">
+            <h1>직원 관리</h1>
+            <p class="pin-help">관리 PIN을 입력하세요</p>
+            <input id="pinInput" class="pin-input" type="password" inputmode="numeric" maxlength="8" autocomplete="off"
+                placeholder="PIN">
+            <button id="pinSubmitButton" class="pin-submit" type="button">입장</button>
+            <p id="pinError" class="pin-error" hidden></p>
+        </div>
+    </div>
+
+    <div id="adminApp" class="container" hidden>
+        <div class="ad-section">
+            <img id="adImage" src="./ad-image.jpg" alt="광고 이미지" class="ad-image">
+        </div>
+
+        <div class="order-section">
+            <div class="status-container">
+                <div class="status-header waiting-header">
+                    <h2>준비중</h2>
+                </div>
+                <div id="waitingList" class="order-cards waiting-list admin-order-list"></div>
+            </div>
+
+            <div class="status-container">
+                <div class="status-header ready-header">
+                    <h2>준비완료</h2>
+                </div>
+                <div id="readyList" class="order-cards ready-list admin-order-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="actionOverlay" class="action-overlay" hidden>
+        <div class="action-popup" role="dialog" aria-modal="true">
+            <button id="actionCloseButton" class="action-close" type="button" aria-label="닫기">×</button>
+            <div id="actionOrderNumber" class="action-order-number"></div>
+            <div id="actionOrderMenu" class="action-order-menu"></div>
+            <button id="actionPrimaryButton" class="action-button action-primary" type="button"></button>
+            <button id="actionSecondaryButton" class="action-button action-secondary" type="button"></button>
+            <p id="actionStatus" class="action-status" hidden></p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="order-data.js"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>

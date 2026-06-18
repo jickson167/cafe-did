@@ -1,0 +1,177 @@
+.admin-page {
+    background-color: #f5f1eb;
+}
+
+.pin-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #a89968 0%, #8b7355 100%);
+    z-index: 20;
+}
+
+.pin-panel {
+    width: min(420px, 90vw);
+    background: #fff;
+    border-radius: 18px;
+    padding: 32px 28px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.pin-panel h1 {
+    font-size: 32px;
+    color: #56433B;
+    margin-bottom: 8px;
+}
+
+.pin-help {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.pin-input {
+    width: 100%;
+    font-size: 28px;
+    text-align: center;
+    letter-spacing: 0.3em;
+    padding: 14px 16px;
+    border: 2px solid #c9b48d;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.pin-submit {
+    width: 100%;
+    font-size: 22px;
+    font-weight: bold;
+    color: #fff;
+    background: #91663A;
+    border: none;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+}
+
+.pin-error {
+    margin-top: 14px;
+    color: #b00020;
+    font-size: 16px;
+}
+
+.admin-order-list .order-card {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 12px 14px;
+    cursor: pointer;
+}
+
+.admin-order-list .order-card-number {
+    font-size: clamp(1.4rem, 4vw, 2.2rem) !important;
+    text-align: left;
+    line-height: 1.1;
+    margin-bottom: 8px;
+}
+
+.admin-order-list .order-card-menu {
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    color: #4a3b32;
+    text-align: left;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: keep-all;
+    overflow: hidden;
+    flex: 1;
+}
+
+.admin-order-list.ready-list .order-card-menu {
+    color: #5a4a3d;
+}
+
+.action-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+    padding: 20px;
+}
+
+.action-popup {
+    position: relative;
+    width: min(360px, 92vw);
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 22px 22px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+}
+
+.action-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.action-order-number {
+    font-size: 42px;
+    font-weight: 900;
+    color: #56433B;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.action-order-menu {
+    font-size: 16px;
+    color: #555;
+    text-align: center;
+    white-space: pre-wrap;
+    margin-bottom: 18px;
+    min-height: 20px;
+}
+
+.action-button {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.action-button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.action-primary {
+    background: #91663A;
+    color: #fff;
+}
+
+.action-secondary {
+    background: #ead9b9;
+    color: #56433B;
+    border: 2px solid #91663A;
+}
+
+.action-status {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-top: 4px;
+}
