@@ -425,7 +425,7 @@ function renderOrderCards(container, orders, status) {
         }
     } else {
         orders.forEach((order) => {
-            const card = createOrderCard(order.number, status);
+            const card = createOrderCard(order, status);
             fragment.appendChild(card);
         });
     }
@@ -442,15 +442,28 @@ function renderOrderCards(container, orders, status) {
 /**
  * 주문 카드 생성
  */
-function createOrderCard(orderNumber, status) {
-    const displayNumber = typeof orderNumber === 'string'
-        ? orderNumber
-        : DidOrderData.normalizeOrder(orderNumber).number;
+function createOrderCard(orderOrNumber, status) {
+    const order = typeof orderOrNumber === 'string'
+        ? { number: orderOrNumber, serviceType: '' }
+        : DidOrderData.normalizeOrder(orderOrNumber);
+    const displayNumber = order.number;
 
     const card = document.createElement('div');
     card.className = 'order-card';
     card.setAttribute('data-order-number', displayNumber);
     card.setAttribute('data-status', status);
+
+    if (order.serviceType) {
+        const serviceType = document.createElement('span');
+        serviceType.className = 'order-card-service-type';
+        serviceType.textContent = order.serviceType;
+        if (order.serviceType.includes('포장')) {
+            serviceType.classList.add('is-takeout');
+        } else if (order.serviceType.includes('매장')) {
+            serviceType.classList.add('is-dine-in');
+        }
+        card.appendChild(serviceType);
+    }
 
     const number = document.createElement('span');
     number.className = 'order-card-number';

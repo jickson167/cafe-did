@@ -1,28 +1,26 @@
 const SUPABASE_URL = 'https://wbiubbcvsyprqrknnfyb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable__ZDgdPtpamWxdUAx7HfHkQ_MgJtwHQ1';
 
-const { createClient } = window.supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 const MAX_WAITING = 6;
 const MAX_READY = 4;
 const DEFAULT_ADMIN_PIN = '0000';
-const SKIP_PIN = true;
+const SKIP_PIN = false;
 
-const pinScreen = document.getElementById('pinScreen');
-const adminApp = document.getElementById('adminApp');
-const pinInput = document.getElementById('pinInput');
-const pinSubmitButton = document.getElementById('pinSubmitButton');
-const pinError = document.getElementById('pinError');
-const waitingList = document.getElementById('waitingList');
-const readyList = document.getElementById('readyList');
-const actionOverlay = document.getElementById('actionOverlay');
-const actionCloseButton = document.getElementById('actionCloseButton');
-const actionOrderNumber = document.getElementById('actionOrderNumber');
-const actionOrderMenu = document.getElementById('actionOrderMenu');
-const actionPrimaryButton = document.getElementById('actionPrimaryButton');
-const actionSecondaryButton = document.getElementById('actionSecondaryButton');
-const actionStatus = document.getElementById('actionStatus');
+let supabaseClient = null;
+let pinScreen;
+let adminApp;
+let pinInput;
+let pinSubmitButton;
+let pinError;
+let waitingList;
+let readyList;
+let actionOverlay;
+let actionCloseButton;
+let actionOrderNumber;
+let actionOrderMenu;
+let actionPrimaryButton;
+let actionSecondaryButton;
+let actionStatus;
 
 let currentData = { waiting: [], ready: [] };
 let hasInitialDisplayLoad = false;
@@ -31,6 +29,7 @@ let storeContext = null;
 let selectedOrder = null;
 let commandInFlight = false;
 let pollingStarted = false;
+let pinSubmitting = false;
 
 function getSlugFromUrl() {
     return new URLSearchParams(window.location.search).get('slug');
@@ -58,6 +57,90 @@ function formatMenuText(menu) {
         .trim();
 }
 
+function createSupabaseClient() {
+    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+        throw new Error('Supabase 스크립트를 불러오지 못했습니다. 네트워크 연결 후 새로고침해 주세요.');
+    }
+
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+function bindDomReferences() {
+    pinScreen = document.getElementById('pinScreen');
+    adminApp = document.getElementById('adminApp');
+    pinInput = document.getElementById('pinInput');
+    pinSubmitButton = document.getElementById('pinSubmitButton');
+    pinError = document.getElementById('pinError');
+    waitingList = document.getElementById('waitingList');
+    readyList = document.getElementById('readyList');
+    actionOverlay = document.getElementById('actionOverlay');
+    actionCloseButton = document.getElementById('actionCloseButton');
+    actionOrderNumber = document.getElementById('actionOrderNumber');
+    actionOrderMenu = document.getElementById('actionOrderMenu');
+    actionPrimaryButton = document.getElementById('actionPrimaryButton');
+    actionSecondaryButton = document.getElementById('actionSecondaryButton');
+    actionStatus = document.getElementById('actionStatus');
+}
+
+function showPinScreen() {
+    if (pinScreen)
+        pinScreen.hidden = false;
+    if (adminApp)
+        adminApp.hidden = true;
+}
+
+function hidePinError() {
+    if (!pinError)
+        return;
+
+    pinError.hidden = true;
+    pinError.textContent = '';
+}
+
+function showPinError(error) {
+    if (!pinError)
+        return;
+
+    pinError.textContent = formatPinError(error);
+    pinError.hidden = false;
+}
+
+function setPinSubmitting(submitting) {
+    pinSubmitting = submitting;
+
+    if (pinSubmitButton) {
+        pinSubmitButton.disabled = submitting;
+        pinSubmitButton.textContent = submitting ? '확인 중...' : '입장';
+    }
+
+    if (pinInput)
+        pinInput.disabled = submitting;
+}
+
+function formatPinError(error) {
+    if (!error)
+        return '입장에 실패했습니다.';
+
+    if (typeof error === 'string')
+        return error;
+
+    const schemaMessage = formatCommandError(error);
+    if (/web-admin-schema\.sql/i.test(schemaMessage))
+        return schemaMessage;
+
+    const message = error.message || '';
+    const details = error.details || '';
+
+    if (/invalid_pin/i.test(message) || /invalid_pin/i.test(details)) {
+        return '관리 PIN이 일치하지 않습니다. did_status.admin_pin 값을 확인하세요. (기본값 0000)';
+    }
+
+    if (message)
+        return message;
+
+    return '입장에 실패했습니다.';
+}
+
 async function resolveStoreContext() {
     const slug = getSlugFromUrl();
     if (!slug) {
@@ -65,11 +148,27 @@ async function resolveStoreContext() {
     }
 
     const { data: storeId, error } = await supabaseClient.rpc('get_store_id_by_slug', { p_slug: slug });
-    if (error || !storeId) {
-        throw new Error('매장을 찾을 수 없습니다.');
+    if (error) {
+        if (isMissingSupabaseFunction(error)) {
+            console.warn('[ADMIN] get_store_id_by_slug unavailable — using legacy did_status');
+            return { mode: 'legacy', legacyId: 1, slug: null, storeId: null, requestedSlug: slug };
+        }
+
+        throw error;
+    }
+
+    if (!storeId) {
+        console.warn(`[ADMIN] slug "${slug}" not found — using legacy did_status`);
+        return { mode: 'legacy', legacyId: 1, slug: null, storeId: null, requestedSlug: slug };
     }
 
     return { mode: 'slug', legacyId: null, slug, storeId };
+}
+
+function isMissingSupabaseFunction(error) {
+    const code = error?.code || '';
+    const message = error?.message || '';
+    return code === 'PGRST202' || /Could not find the function/i.test(message);
 }
 
 async function verifyPin(pin) {
@@ -387,66 +486,113 @@ async function enterAdminApp(pin) {
 }
 
 async function handlePinSubmit() {
-    const pin = pinInput.value.trim();
-    pinError.hidden = true;
+    if (pinSubmitting || !pinInput || !pinSubmitButton)
+        return;
 
-    if (!pin) {
-        pinError.textContent = 'PIN을 입력하세요.';
-        pinError.hidden = false;
+    if (!supabaseClient) {
+        showPinError('Supabase 연결이 준비되지 않았습니다. 네트워크 확인 후 새로고침해 주세요.');
         return;
     }
 
+    const pin = pinInput.value.trim();
+    hidePinError();
+
+    if (!pin) {
+        showPinError('PIN을 입력하세요.');
+        return;
+    }
+
+    setPinSubmitting(true);
     try {
+        storeContext = null;
         storeContext = await resolveStoreContext();
         const ok = await verifyPin(pin);
         if (!ok) {
-            pinError.textContent = 'PIN이 올바르지 않습니다.';
-            pinError.hidden = false;
+            showPinError('PIN이 올바르지 않습니다. did_status.admin_pin 값을 확인하세요. (기본값 0000)');
             return;
         }
 
         await enterAdminApp(pin);
     } catch (error) {
         console.error('[ADMIN] pin verify failed:', error);
-        pinError.textContent = error.message || '입장에 실패했습니다.';
-        pinError.hidden = false;
+        showPinError(error);
+    } finally {
+        setPinSubmitting(false);
     }
 }
 
 async function initializeAdmin() {
     closeActionPopup();
+    hidePinError();
+    showPinScreen();
 
     if (!shouldSkipPin()) {
+        pinInput?.focus();
         console.log('[ADMIN] PIN 화면 표시');
         return;
     }
 
+    setPinSubmitting(true);
     try {
+        storeContext = null;
         storeContext = await resolveStoreContext();
-        verifiedPin = DEFAULT_ADMIN_PIN;
         await enterAdminApp(DEFAULT_ADMIN_PIN);
         console.log('[ADMIN] PIN 없이 바로 입장');
     } catch (error) {
         console.error('[ADMIN] auto enter failed:', error);
-        pinError.textContent = error.message || '화면을 불러오지 못했습니다.';
-        pinError.hidden = false;
+        showPinError(error);
+        pinInput?.focus();
+    } finally {
+        setPinSubmitting(false);
     }
 }
 
-pinSubmitButton.addEventListener('click', handlePinSubmit);
-pinInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-        handlePinSubmit();
+function bindAdminEvents() {
+    if (!pinSubmitButton) {
+        console.error('[ADMIN] pinSubmitButton 요소를 찾을 수 없습니다.');
+        return;
     }
-});
 
-actionCloseButton.addEventListener('click', closeActionPopup);
-actionOverlay.addEventListener('click', (event) => {
-    if (event.target === actionOverlay) {
-        closeActionPopup();
+    pinSubmitButton.addEventListener('click', handlePinSubmit);
+    pinInput?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handlePinSubmit();
+        }
+    });
+
+    actionCloseButton?.addEventListener('click', closeActionPopup);
+    actionOverlay?.addEventListener('click', (event) => {
+        if (event.target === actionOverlay) {
+            closeActionPopup();
+        }
+    });
+
+    console.log('[ADMIN] 입장 버튼 이벤트 연결됨');
+}
+
+function bootAdminApp() {
+    bindDomReferences();
+    bindAdminEvents();
+
+    try {
+        supabaseClient = createSupabaseClient();
+        initializeAdmin();
+        console.log('[ADMIN] 관리 페이지 준비 완료');
+    } catch (error) {
+        console.error('[ADMIN] init failed:', error);
+        showPinScreen();
+        showPinError(error);
     }
-});
+}
 
-document.addEventListener('DOMContentLoaded', initializeAdmin);
+function runWhenDomReady(callback) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', callback);
+        return;
+    }
 
-console.log('[ADMIN] 관리 페이지 준비 완료');
+    callback();
+}
+
+runWhenDomReady(bootAdminApp);

@@ -129,6 +129,7 @@ body {
 
 /* 주문 번호 카드 */
 .order-card {
+    position: relative;
     background: white;
     border-radius: 12px;
     padding: 16px;
@@ -142,6 +143,25 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transition: all 0.3s ease;
     animation: slideIn 0.3s ease-out;
+}
+
+.order-card-service-type {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    font-size: clamp(0.75rem, 1.6vw, 1rem);
+    font-weight: 800;
+    line-height: 1;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.order-card-service-type.is-dine-in {
+    color: #A5D46B;
+}
+
+.order-card-service-type.is-takeout {
+    color: #FF9800;
 }
 
 .order-card:hover {

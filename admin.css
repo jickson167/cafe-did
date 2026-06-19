@@ -59,6 +59,11 @@
     cursor: pointer;
 }
 
+.pin-submit:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
 .pin-error {
     margin-top: 14px;
     color: #b00020;
