@@ -85,11 +85,36 @@
 }
 
 .admin-order-list .order-card {
+    position: relative;
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
     padding: 12px 14px;
     cursor: pointer;
+}
+
+.admin-order-list .order-card.has-service-type {
+    padding-top: 34px;
+}
+
+.admin-order-list .order-card-service-type {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+    font-weight: 800;
+    text-align: left;
+    line-height: 1.1;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.admin-order-list .order-card-service-type.is-dine-in {
+    color: #A5D46B;
+}
+
+.admin-order-list .order-card-service-type.is-takeout {
+    color: #FF9800;
 }
 
 .admin-order-list .order-card-number {
@@ -105,22 +130,6 @@
     color: #6b4d2e;
     text-align: left;
     margin-bottom: 6px;
-}
-
-.admin-order-list .order-card-service-type {
-    font-size: clamp(0.9rem, 2.2vw, 1.1rem);
-    font-weight: 800;
-    text-align: left;
-    line-height: 1.1;
-    margin-bottom: 8px;
-}
-
-.admin-order-list .order-card-service-type.is-dine-in {
-    color: #A5D46B;
-}
-
-.admin-order-list .order-card-service-type.is-takeout {
-    color: #FF9800;
 }
 
 .admin-order-list .order-card-menu {
