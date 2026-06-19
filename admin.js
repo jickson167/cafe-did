@@ -5,12 +5,14 @@ const MAX_WAITING = 6;
 const MAX_READY = 4;
 const DEFAULT_ADMIN_PIN = '0000';
 const SKIP_PIN = false;
+const ADMIN_SCRIPT_VERSION = '3';
 
 let supabaseClient = null;
 let pinScreen;
 let adminApp;
 let pinInput;
 let pinSubmitButton;
+let pinStatus;
 let pinError;
 let waitingList;
 let readyList;
@@ -30,6 +32,8 @@ let selectedOrder = null;
 let commandInFlight = false;
 let pollingStarted = false;
 let pinSubmitting = false;
+let realtimeSubscribed = false;
+let lastPinSubmitAt = 0;
 
 function getSlugFromUrl() {
     return new URLSearchParams(window.location.search).get('slug');
@@ -70,6 +74,7 @@ function bindDomReferences() {
     adminApp = document.getElementById('adminApp');
     pinInput = document.getElementById('pinInput');
     pinSubmitButton = document.getElementById('pinSubmitButton');
+    pinStatus = document.getElementById('pinStatus');
     pinError = document.getElementById('pinError');
     waitingList = document.getElementById('waitingList');
     readyList = document.getElementById('readyList');
@@ -93,16 +98,33 @@ function hidePinError() {
     if (!pinError)
         return;
 
-    pinError.hidden = true;
     pinError.textContent = '';
+    pinError.setAttribute('hidden', '');
 }
 
 function showPinError(error) {
     if (!pinError)
         return;
 
+    clearPinStatus();
     pinError.textContent = formatPinError(error);
-    pinError.hidden = false;
+    pinError.removeAttribute('hidden');
+}
+
+function clearPinStatus() {
+    if (!pinStatus)
+        return;
+
+    pinStatus.textContent = '';
+    pinStatus.classList.remove('is-loading');
+}
+
+function showPinStatus(message) {
+    if (!pinStatus)
+        return;
+
+    pinStatus.textContent = message;
+    pinStatus.classList.toggle('is-loading', message === '확인 중...');
 }
 
 function setPinSubmitting(submitting) {
@@ -275,31 +297,40 @@ async function loadInitialData() {
 }
 
 function subscribeToRealtimeUpdates() {
-    const channelName = storeContext?.mode === 'slug'
+    if (realtimeSubscribed || !supabaseClient || !storeContext)
+        return;
+
+    const channelName = storeContext.mode === 'slug'
         ? `did_status_admin_${storeContext.storeId}`
         : 'did_status_admin_legacy';
 
-    const filter = storeContext?.mode === 'slug'
+    const filter = storeContext.mode === 'slug'
         ? `store_id=eq.${storeContext.storeId}`
         : 'id=eq.1';
 
-    supabaseClient
-        .channel(channelName)
-        .on(
-            'postgres_changes',
-            {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'did_status',
-                filter
-            },
-            (payload) => {
-                if (payload.new?.data) {
-                    updateDisplay(payload.new.data);
+    try {
+        supabaseClient
+            .channel(channelName)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'did_status',
+                    filter
+                },
+                (payload) => {
+                    if (payload.new?.data) {
+                        updateDisplay(payload.new.data);
+                    }
                 }
-            }
-        )
-        .subscribe();
+            )
+            .subscribe();
+
+        realtimeSubscribed = true;
+    } catch (error) {
+        console.warn('[ADMIN] realtime subscribe skipped:', error);
+    }
 }
 
 function updateDisplay(newData) {
@@ -472,11 +503,17 @@ async function runCommand(action) {
 
 async function enterAdminApp(pin) {
     verifiedPin = pin;
-    pinScreen.hidden = true;
-    adminApp.hidden = false;
     closeActionPopup();
 
     await loadInitialData();
+
+    if (pinScreen)
+        pinScreen.hidden = true;
+    if (adminApp)
+        adminApp.hidden = false;
+
+    clearPinStatus();
+    hidePinError();
     subscribeToRealtimeUpdates();
 
     if (!pollingStarted) {
@@ -485,7 +522,12 @@ async function enterAdminApp(pin) {
     }
 }
 
-async function handlePinSubmit() {
+async function handlePinSubmit(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+
+    console.log('[ADMIN] handlePinSubmit', { version: ADMIN_SCRIPT_VERSION });
+
     if (pinSubmitting || !pinInput || !pinSubmitButton)
         return;
 
@@ -503,6 +545,7 @@ async function handlePinSubmit() {
     }
 
     setPinSubmitting(true);
+    showPinStatus('확인 중...');
     try {
         storeContext = null;
         storeContext = await resolveStoreContext();
@@ -515,9 +558,11 @@ async function handlePinSubmit() {
         await enterAdminApp(pin);
     } catch (error) {
         console.error('[ADMIN] pin verify failed:', error);
+        showPinScreen();
         showPinError(error);
     } finally {
         setPinSubmitting(false);
+        clearPinStatus();
     }
 }
 
@@ -553,13 +598,29 @@ function bindAdminEvents() {
         return;
     }
 
-    pinSubmitButton.addEventListener('click', handlePinSubmit);
+    const onPinSubmit = (event) => {
+        const now = Date.now();
+        if (now - lastPinSubmitAt < 400)
+            return;
+
+        lastPinSubmitAt = now;
+        void handlePinSubmit(event);
+    };
+
+    pinSubmitButton.addEventListener('click', onPinSubmit);
+    pinSubmitButton.addEventListener('touchend', (event) => {
+        event.preventDefault();
+        onPinSubmit(event);
+    }, { passive: false });
+
     pinInput?.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            handlePinSubmit();
+            void handlePinSubmit(event);
         }
     });
+
+    window.__adminPinSubmit = onPinSubmit;
 
     actionCloseButton?.addEventListener('click', closeActionPopup);
     actionOverlay?.addEventListener('click', (event) => {
@@ -568,7 +629,7 @@ function bindAdminEvents() {
         }
     });
 
-    console.log('[ADMIN] 입장 버튼 이벤트 연결됨');
+    console.log('[ADMIN] 입장 버튼 이벤트 연결됨', { version: ADMIN_SCRIPT_VERSION });
 }
 
 function bootAdminApp() {

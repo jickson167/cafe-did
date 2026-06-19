@@ -65,9 +65,23 @@
 }
 
 .pin-error {
-    margin-top: 14px;
+    margin-top: 8px;
     color: #b00020;
     font-size: 16px;
+    font-weight: 700;
+    min-height: 1.2em;
+}
+
+.pin-status {
+    margin-top: 14px;
+    color: #666;
+    font-size: 16px;
+    min-height: 1.2em;
+}
+
+.pin-status.is-loading {
+    color: #91663A;
+    font-weight: 700;
 }
 
 .admin-order-list .order-card {

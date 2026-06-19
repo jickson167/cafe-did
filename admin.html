@@ -7,10 +7,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#8b7355">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>카페 DID 관리</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="admin.css">
-    <script src="device-layout.js"></script>
+    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="admin.css?v=3">
+    <script src="device-layout.js?v=3"></script>
 </head>
 
 <body class="admin-page">
@@ -20,8 +21,10 @@
             <p class="pin-help">관리 PIN을 입력하세요</p>
             <input id="pinInput" class="pin-input" type="password" inputmode="numeric" maxlength="8" autocomplete="off"
                 placeholder="PIN">
-            <button id="pinSubmitButton" class="pin-submit" type="button">입장</button>
-            <p id="pinError" class="pin-error" hidden></p>
+            <button id="pinSubmitButton" class="pin-submit" type="button"
+                onclick="window.__adminPinSubmit && window.__adminPinSubmit(event)">입장</button>
+            <p id="pinStatus" class="pin-status" aria-live="polite"></p>
+            <p id="pinError" class="pin-error" aria-live="assertive" hidden></p>
         </div>
     </div>
 
@@ -59,8 +62,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="order-data.js"></script>
-    <script src="admin.js"></script>
+    <script src="order-data.js?v=3"></script>
+    <script src="admin.js?v=3"></script>
 </body>
 
 </html>
