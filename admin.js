@@ -243,6 +243,13 @@ function createOrderCard(order, status) {
     number.textContent = order.number;
     card.appendChild(number);
 
+    if (order.categories) {
+        const categories = document.createElement('div');
+        categories.className = 'order-card-categories';
+        categories.textContent = order.categories;
+        card.appendChild(categories);
+    }
+
     const menuText = formatMenuText(order.menu);
     if (menuText) {
         const menu = document.createElement('div');
@@ -256,11 +263,19 @@ function createOrderCard(order, status) {
 }
 
 function openActionPopup(order, status) {
-    selectedOrder = { number: order.number, menu: formatMenuText(order.menu), status };
+    selectedOrder = {
+        number: order.number,
+        menu: formatMenuText(order.menu),
+        categories: order.categories || '',
+        status
+    };
     commandInFlight = false;
 
     actionOrderNumber.textContent = order.number;
-    actionOrderMenu.textContent = formatMenuText(order.menu);
+    actionOrderMenu.textContent = [
+        order.categories || '',
+        formatMenuText(order.menu)
+    ].filter(Boolean).join('\n\n');
     actionStatus.hidden = true;
     actionStatus.textContent = '';
 
