@@ -147,11 +147,13 @@ body {
 
 .order-card-service-type {
     position: absolute;
-    top: 8px;
-    left: 10px;
-    font-size: clamp(0.75rem, 1.6vw, 1rem);
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    font-size: clamp(0.9rem, 2vw, 1.25rem);
     font-weight: 800;
-    line-height: 1;
+    line-height: 1.1;
+    text-align: left;
     z-index: 1;
     pointer-events: none;
 }
@@ -177,6 +179,10 @@ body {
     line-height: 1;
     width: 100%;
     white-space: nowrap;
+}
+
+.order-card.has-service-type .order-card-number {
+    margin-top: 1.1rem;
 }
 
 .waiting-list {

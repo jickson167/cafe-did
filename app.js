@@ -454,6 +454,7 @@ function createOrderCard(orderOrNumber, status) {
     card.setAttribute('data-status', status);
 
     if (order.serviceType) {
+        card.classList.add('has-service-type');
         const serviceType = document.createElement('span');
         serviceType.className = 'order-card-service-type';
         serviceType.textContent = order.serviceType;
