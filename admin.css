@@ -129,8 +129,11 @@
     line-height: 1.35;
     white-space: pre-wrap;
     word-break: keep-all;
-    overflow-x: auto;
-    overflow-y: auto;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 6;
+    text-overflow: ellipsis;
     max-height: 8.5rem;
     flex: 1;
 }

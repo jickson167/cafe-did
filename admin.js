@@ -61,6 +61,29 @@ function formatMenuText(menu) {
         .trim();
 }
 
+function truncateMenuLine(line, maxLength) {
+    if (!line)
+        return '';
+
+    const trimmed = line.trim();
+    if (trimmed.length <= maxLength)
+        return trimmed;
+
+    return `${trimmed.slice(0, Math.max(0, maxLength - 1))}...`;
+}
+
+function formatAdminMenuText(menu) {
+    const plain = formatMenuText(menu);
+    if (!plain)
+        return '';
+
+    return plain
+        .split('\n')
+        .map((line) => truncateMenuLine(line, 42))
+        .filter(Boolean)
+        .join('\n');
+}
+
 function createSupabaseClient() {
     if (!window.supabase || typeof window.supabase.createClient !== 'function') {
         throw new Error('Supabase 스크립트를 불러오지 못했습니다. 네트워크 연결 후 새로고침해 주세요.');
@@ -418,7 +441,7 @@ function createOrderCard(order, status) {
         card.appendChild(serviceType);
     }
 
-    const menuText = formatMenuText(order.menu);
+    const menuText = formatAdminMenuText(order.menu);
     if (menuText) {
         const menu = document.createElement('div');
         menu.className = 'order-card-menu';
@@ -433,7 +456,7 @@ function createOrderCard(order, status) {
 function openActionPopup(order, status) {
     selectedOrder = {
         number: order.number,
-        menu: formatMenuText(order.menu),
+        menu: formatAdminMenuText(order.menu),
         categories: order.categories || '',
         serviceType: order.serviceType || '',
         status
@@ -444,7 +467,7 @@ function openActionPopup(order, status) {
     actionOrderMenu.textContent = [
         order.serviceType || '',
         order.categories || '',
-        formatMenuText(order.menu)
+        formatAdminMenuText(order.menu)
     ].filter(Boolean).join('\n\n');
     actionStatus.hidden = true;
     actionStatus.textContent = '';
