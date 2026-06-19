@@ -417,18 +417,6 @@ function createOrderCard(order, status) {
     card.dataset.orderNumber = order.number;
     card.dataset.status = status;
 
-    const number = document.createElement('div');
-    number.className = 'order-card-number';
-    number.textContent = order.number;
-    card.appendChild(number);
-
-    if (order.categories) {
-        const categories = document.createElement('div');
-        categories.className = 'order-card-categories';
-        categories.textContent = order.categories;
-        card.appendChild(categories);
-    }
-
     if (order.serviceType) {
         const serviceType = document.createElement('div');
         serviceType.className = 'order-card-service-type';
@@ -439,6 +427,18 @@ function createOrderCard(order, status) {
             serviceType.classList.add('is-dine-in');
         }
         card.appendChild(serviceType);
+    }
+
+    const number = document.createElement('div');
+    number.className = 'order-card-number';
+    number.textContent = order.number;
+    card.appendChild(number);
+
+    if (order.categories) {
+        const categories = document.createElement('div');
+        categories.className = 'order-card-categories';
+        categories.textContent = order.categories;
+        card.appendChild(categories);
     }
 
     const menuText = formatAdminMenuText(order.menu);
