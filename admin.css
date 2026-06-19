@@ -88,6 +88,21 @@
     margin-bottom: 6px;
 }
 
+.admin-order-list .order-card-service-type {
+    font-size: clamp(0.85rem, 2vw, 1rem);
+    font-weight: 800;
+    text-align: left;
+    margin-bottom: 6px;
+}
+
+.admin-order-list .order-card-service-type.is-dine-in {
+    color: #A5D46B;
+}
+
+.admin-order-list .order-card-service-type.is-takeout {
+    color: #FF9800;
+}
+
 .admin-order-list .order-card-menu {
     font-size: clamp(0.85rem, 2vw, 1rem);
     color: #4a3b32;

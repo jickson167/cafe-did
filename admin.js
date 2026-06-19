@@ -96,6 +96,32 @@ async function verifyPin(pin) {
     return !!data;
 }
 
+function formatCommandError(error) {
+    if (!error)
+        return '명령 전송 실패. KDS 실행 또는 Supabase 설정을 확인하세요.';
+
+    const code = error.code || '';
+    const message = error.message || '';
+    const details = error.details || '';
+
+    if (code === 'PGRST202' || /Could not find the function/i.test(message)) {
+        return 'Supabase에 web-admin-schema.sql이 아직 적용되지 않았습니다. Dashboard → SQL Editor에서 실행해 주세요.';
+    }
+
+    if (code === '42P01' || /did_commands/i.test(message)) {
+        return 'did_commands 테이블이 없습니다. Supabase SQL Editor에서 web-admin-schema.sql을 실행해 주세요.';
+    }
+
+    if (/invalid_pin/i.test(message) || /invalid_pin/i.test(details)) {
+        return '관리 PIN이 일치하지 않습니다. did_status.admin_pin 값을 확인하세요. (기본값 0000)';
+    }
+
+    if (message)
+        return `명령 전송 실패: ${message}`;
+
+    return '명령 전송 실패. KDS 실행 또는 Supabase 설정을 확인하세요.';
+}
+
 async function enqueueCommand(action, orderNumber) {
     if (!verifiedPin) {
         throw new Error('PIN이 확인되지 않았습니다.');
@@ -250,6 +276,18 @@ function createOrderCard(order, status) {
         card.appendChild(categories);
     }
 
+    if (order.serviceType) {
+        const serviceType = document.createElement('div');
+        serviceType.className = 'order-card-service-type';
+        serviceType.textContent = order.serviceType;
+        if (order.serviceType.includes('포장')) {
+            serviceType.classList.add('is-takeout');
+        } else if (order.serviceType.includes('매장')) {
+            serviceType.classList.add('is-dine-in');
+        }
+        card.appendChild(serviceType);
+    }
+
     const menuText = formatMenuText(order.menu);
     if (menuText) {
         const menu = document.createElement('div');
@@ -267,12 +305,14 @@ function openActionPopup(order, status) {
         number: order.number,
         menu: formatMenuText(order.menu),
         categories: order.categories || '',
+        serviceType: order.serviceType || '',
         status
     };
     commandInFlight = false;
 
     actionOrderNumber.textContent = order.number;
     actionOrderMenu.textContent = [
+        order.serviceType || '',
         order.categories || '',
         formatMenuText(order.menu)
     ].filter(Boolean).join('\n\n');
@@ -327,7 +367,7 @@ async function runCommand(action) {
         console.error('[ADMIN] command failed:', error);
         commandInFlight = false;
         setActionButtonsDisabled(false);
-        actionStatus.textContent = '명령 전송 실패. KDS 실행 또는 Supabase 설정을 확인하세요.';
+        actionStatus.textContent = formatCommandError(error);
     }
 }
 

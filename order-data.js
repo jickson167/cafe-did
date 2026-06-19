@@ -10,7 +10,8 @@ function normalizeOrder(item) {
     return {
         number: String(item.n || item.number || '').trim(),
         menu: String(item.m || item.menu || '').trim(),
-        categories: String(item.c || item.categories || '').trim()
+        categories: String(item.c || item.categories || '').trim(),
+        serviceType: String(item.t || item.serviceType || '').trim()
     };
 }
 
@@ -35,7 +36,7 @@ function trimOrders(items, maxCount) {
 
 function ordersSnapshotKey(orders) {
     return orders
-        .map((order) => `${order.number}|${order.menu}|${order.categories}`)
+        .map((order) => `${order.number}|${order.menu}|${order.categories}|${order.serviceType}`)
         .join(';;');
 }
 
